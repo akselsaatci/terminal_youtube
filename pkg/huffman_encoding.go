@@ -68,6 +68,21 @@ func calculateFrequancy(input string) map[rune]int {
 	return res
 }
 
+func buildHuffmanCodes(node *MinNode, currentCode string, codes map[rune]string) {
+	if node == nil {
+		return
+	}
+	// basicaly im checking if the current node is leaf if it is leaf node that means im interested in writing its code
+	// if it is not it means that is just temp
+	if node.left == nil && node.right == nil {
+		codes[node.value] = currentCode
+		return
+	}
+
+	buildHuffmanCodes(node.left, currentCode+"0", codes)
+	buildHuffmanCodes(node.right, currentCode+"1", codes)
+}
+
 func Encode(input string) string {
 	freqTable := calculateFrequancy(input)
 	pq := &MinHeap{}
@@ -107,19 +122,23 @@ func Encode(input string) string {
 	return encoded
 }
 
-func buildHuffmanCodes(node *MinNode, currentCode string, codes map[rune]string) {
-	if node == nil {
-		return
-	}
-	// basicaly im checking if the current node is leaf if it is leaf node that means im interested in writing its code
-	// if it is not it means that is just temp
-	if node.left == nil && node.right == nil {
-		codes[node.value] = currentCode
-		return
+func Decode(input string, codes map[rune]string) string {
+
+	currentString := ""
+	result := ""
+	arrangedCodes := map[string]rune{}
+
+	for key, value := range codes {
+		arrangedCodes[value] = key
 	}
 
-	buildHuffmanCodes(node.left, currentCode+"0", codes)
-	buildHuffmanCodes(node.right, currentCode+"1", codes)
+	for _, value := range input {
+		currentString += string(value)
+		if t_value, ok := arrangedCodes[currentString]; ok {
+			result += string(t_value)
+			currentString = ""
+		}
+	}
+
+	return result
 }
-
-func Decode(input string) {}
