@@ -7,9 +7,9 @@ import (
 
 func TestEncodeString(t *testing.T) {
 
-	input := "ssssssssdadasddsfsad"
+	input := "fsddsdaaaa"
 
-	expectedOutput := "000000001110111101011110100010111"
+	expectedOutput := "1101111010111100000"
 
 	actualOutput := Encode(input)
 
