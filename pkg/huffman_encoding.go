@@ -101,7 +101,7 @@ func Encode(input string) string {
 		right = heap.Pop(pq).(*MinNode)
 
 		top := &MinNode{
-			value:    '$', // Internal node (no character)
+			value:    ' ', // blank char
 			priority: left.priority + right.priority,
 			left:     left,
 			right:    right,
@@ -126,15 +126,16 @@ func Decode(input string, codes map[rune]string) string {
 
 	currentString := ""
 	result := ""
-	arrangedCodes := map[string]rune{}
+	reversedCodes := map[string]rune{}
 
+	//reversing the keys to values to easily find todo look up there is a better way
 	for key, value := range codes {
-		arrangedCodes[value] = key
+		reversedCodes[value] = key
 	}
 
 	for _, value := range input {
 		currentString += string(value)
-		if t_value, ok := arrangedCodes[currentString]; ok {
+		if t_value, ok := reversedCodes[currentString]; ok {
 			result += string(t_value)
 			currentString = ""
 		}
