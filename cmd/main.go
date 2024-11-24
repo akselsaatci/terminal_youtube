@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	string, err := a.ImageToAscii("/Users/akselsaatci/Developer/huffman_encoding/pkg/image_to_ascii/image.png")
+	string, err := a.ImageToAscii("/Users/akselsaatci/Developer/huffman_encoding/pkg/image_to_ascii/x.jpg")
 	if err != nil {
 		panic(err)
 	}
