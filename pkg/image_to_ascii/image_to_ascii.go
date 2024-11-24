@@ -84,14 +84,10 @@ func generateBrightnessToAscii(input [][]uint32) (string, error) {
 	return res, nil
 }
 
-func ImageToAscii(imagePath string) (string, error) {
-	img, conf, err := openImage(imagePath)
+func ImageToAscii(img image.Image) (string, error) {
+	conf := image.Config{Width: 640, Height: 480}
 
-	if err != nil {
-		return "", err
-	}
-
-	brightnessLevels, err := calculateBrightnessOfPixels(img, conf)
+	brightnessLevels, err := calculateBrightnessOfPixels(img, &conf)
 
 	if err != nil {
 		return "", err
