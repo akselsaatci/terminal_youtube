@@ -6,11 +6,11 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	"math"
 	"os"
 )
 
 const charset string = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
-const divAmount float32 = 3.54166
 
 func openImage(filePath string) (image.Image, *image.Config, error) {
 	f, err := os.Open(filePath)
@@ -36,7 +36,7 @@ func calculateBrightnessOfPixels(img image.Image, config *image.Config) ([][]uin
 	imageH := config.Height
 
 	res := make([][]uint32, imageW)
-	for i := 0; i < imageW; i++ { // Outer slice
+	for i := 0; i < imageW; i++ {
 		res[i] = make([]uint32, imageH)
 	}
 
@@ -51,9 +51,9 @@ func calculateBrightnessOfPixels(img image.Image, config *image.Config) ([][]uin
 		for j := 0; j < imageH; j++ {
 			currentColor := img.At(i, j)
 			cR, cG, cB, _ := currentColor.RGBA()
-			r := uint8(cR >> 8)
-			g := uint8(cG >> 8)
-			b := uint8(cB >> 8)
+			r := uint32(cR >> 8)
+			g := uint32(cG >> 8)
+			b := uint32(cB >> 8)
 			avg := (r + g + b) / 3
 
 			res[i][j] = uint32(avg)
@@ -63,20 +63,25 @@ func calculateBrightnessOfPixels(img image.Image, config *image.Config) ([][]uin
 	return res, nil
 }
 
-func generateBrightnessToAscii(input [][]uint32) string {
+func generateBrightnessToAscii(input [][]uint32) (string, error) {
+	// does this necessary :?
+	if len(input[0]) <= 0 {
+		return "", errors.New("Input Should have elements")
+	}
+
+	divAmount := 255.0 / float64(len(charset))
 	res := ""
-	for i := 0; i < len(input); i++ {
-		for j := 0; j < len(input[i]); j++ {
-			charIndex := int(float32(input[i][j]) / divAmount)
+	for j := 0; j < len(input[0]); j++ {
+		for i := 0; i < len(input); i++ {
+			charIndex := int(math.Floor(float64(input[i][j])/divAmount)) + 1
 			if charIndex >= len(charset) {
 				charIndex = len(charset) - 1
 			}
-
 			res += string(charset[charIndex])
 		}
 		res += "\n"
 	}
-	return res
+	return res, nil
 }
 
 func ImageToAscii(imagePath string) (string, error) {
@@ -91,6 +96,10 @@ func ImageToAscii(imagePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	res, err := generateBrightnessToAscii(brightnessLevels)
+	if err != nil {
+		return "", err
+	}
 
-	return generateBrightnessToAscii(brightnessLevels), nil
+	return res, nil
 }
