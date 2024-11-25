@@ -7,7 +7,7 @@ import (
 	"log"
 	"os/exec"
 
-	"github.com/akselsaatci/huffman/pkg/image_to_ascii"
+	"github.com/akselsaatci/terminal_youtube/pkg/image_to_ascii"
 )
 
 type VideoToAsciiProcessor struct {

@@ -1,3 +1,3 @@
-module github.com/akselsaatci/huffman
+module github.com/akselsaatci/terminal_youtube
 
 go 1.21.5

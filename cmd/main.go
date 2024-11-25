@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 
-	"github.com/akselsaatci/huffman/pkg/image_to_ascii"
-	"github.com/akselsaatci/huffman/pkg/video_to_ascii"
-	"github.com/akselsaatci/huffman/pkg/yt_video_downloader"
+	"github.com/akselsaatci/terminal_youtube/pkg/image_to_ascii"
+	"github.com/akselsaatci/terminal_youtube/pkg/video_to_ascii"
+	"github.com/akselsaatci/terminal_youtube/pkg/yt_video_downloader"
 )
 
 func main() {
