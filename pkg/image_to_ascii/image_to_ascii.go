@@ -1,101 +1,87 @@
 package image_to_ascii
 
 import (
-	"errors"
 	"image"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
 	"math"
-	"os"
 )
+
+type BrightnessStrategy interface {
+	CalculateBrightness(img image.Image) ([][]uint32, error)
+}
+
+type AvarageBrightnessStrategy struct {
+}
+
+func (a *AvarageBrightnessStrategy) CalculateBrightness(img image.Image) ([][]uint32, error) {
+	bounds := img.Bounds()
+	width, height := bounds.Max.X, bounds.Max.Y
+
+	res := make([][]uint32, width)
+	for i := range res {
+		res[i] = make([]uint32, height)
+	}
+
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			r, g, b, _ := img.At(x, y).RGBA()
+			avg := (r + g + b) / 3 >> 8
+			res[x][y] = uint32(avg)
+		}
+	}
+
+	return res, nil
+}
 
 const charset string = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
 
-func openImage(filePath string) (image.Image, *image.Config, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer f.Close()
-	img, _, err := image.Decode(f)
-
-	if err != nil {
-		panic("Couldnt decode image")
-	}
-
-	_, err = f.Seek(0, 0)
-
-	config, _, err := image.DecodeConfig(f)
-
-	return img, &config, err
+type AsciiConverter struct {
+	brightnessStrategy BrightnessStrategy
+	charset            string
 }
 
-func calculateBrightnessOfPixels(img image.Image, config *image.Config) ([][]uint32, error) {
-	imageW := config.Width
-	imageH := config.Height
+func NewAsciiConverter() *AsciiConverter {
+	return &AsciiConverter{
+		brightnessStrategy: &AvarageBrightnessStrategy{},
 
-	res := make([][]uint32, imageW)
-	for i := 0; i < imageW; i++ {
-		res[i] = make([]uint32, imageH)
+		charset: "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ",
 	}
-
-	if img == nil {
-		return nil, errors.New("Image is null!")
-	}
-	if config == nil {
-		return nil, errors.New("Config is null!")
-	}
-
-	for i := 0; i < imageW; i++ {
-		for j := 0; j < imageH; j++ {
-			currentColor := img.At(i, j)
-			cR, cG, cB, _ := currentColor.RGBA()
-			r := uint32(cR >> 8)
-			g := uint32(cG >> 8)
-			b := uint32(cB >> 8)
-			avg := (r + g + b) / 3
-
-			res[i][j] = uint32(avg)
-		}
-	}
-
-	return res, nil
 }
 
-func generateBrightnessToAscii(input [][]uint32) (string, error) {
-	// does this necessary :?
-	if len(input[0]) <= 0 {
-		return "", errors.New("Input Should have elements")
+func (c *AsciiConverter) Convert(img image.Image) (string, error) {
+	brightnessLevels, err := c.brightnessStrategy.CalculateBrightness(img)
+	if err != nil {
+		return "", err
 	}
 
-	divAmount := 255.0 / float64(len(charset))
-	res := ""
-	for j := 0; j < len(input[0]); j++ {
-		for i := 0; i < len(input); i++ {
-			charIndex := int(math.Floor(float64(input[i][j])/divAmount)) + 1
-			if charIndex >= len(charset) {
-				charIndex = len(charset) - 1
+	return c.generateAscii(brightnessLevels), nil
+}
+
+func (c *AsciiConverter) generateAscii(input [][]uint32) string {
+	if len(input) == 0 || len(input[0]) == 0 {
+		return ""
+	}
+
+	divAmount := 255.0 / float64(len(c.charset))
+	var res string
+
+	for y := 0; y < len(input[0]); y++ {
+		for x := 0; x < len(input); x++ {
+			charIndex := int(math.Floor(float64(input[x][y]) / divAmount))
+			if charIndex >= len(c.charset) {
+				charIndex = len(c.charset) - 1
 			}
-			res += string(charset[charIndex])
+			res += string(c.charset[charIndex])
 		}
 		res += "\n"
 	}
-	return res, nil
+
+	return res
 }
 
 func ImageToAscii(img image.Image) (string, error) {
-	conf := image.Config{Width: 640, Height: 480}
-
-	brightnessLevels, err := calculateBrightnessOfPixels(img, &conf)
-
-	if err != nil {
-		return "", err
-	}
-	res, err := generateBrightnessToAscii(brightnessLevels)
-	if err != nil {
-		return "", err
-	}
-
-	return res, nil
+	converter := NewAsciiConverter()
+	return converter.Convert(img)
 }
