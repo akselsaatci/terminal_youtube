@@ -14,11 +14,11 @@ type VideoToAsciiProcessor struct {
 	videoPath string
 	frameRate int
 	resuliton string
-	converter image_to_ascii.AsciiConverter
+	converter *image_to_ascii.AsciiConverter
 	stdIn     *io.ReadCloser
 }
 
-func NewVideoToFrameProcessor(v, r string, fps int, conv image_to_ascii.AsciiConverter, stdIn *io.ReadCloser) *VideoToAsciiProcessor {
+func NewVideoToFrameProcessor(v, r string, fps int, conv *image_to_ascii.AsciiConverter, stdIn *io.ReadCloser) *VideoToAsciiProcessor {
 	return &VideoToAsciiProcessor{
 		videoPath: v,
 		resuliton: r,
@@ -46,12 +46,12 @@ func (v *VideoToAsciiProcessor) Process() {
 	//	stdErr, err := ffmpegCmd.StderrPipe()
 
 	if err != nil {
-		fmt.Println("Error creating stdout pipe:", err)
+		log.Println("Error creating stdout pipe:", err)
 		return
 	}
 
 	if err := ffmpegCmd.Start(); err != nil {
-		fmt.Println("Error starting FFmpeg command:", err)
+		log.Println("Error starting FFmpeg command:", err)
 		return
 	}
 
@@ -77,13 +77,13 @@ func (v *VideoToAsciiProcessor) Process() {
 			break
 		}
 		if err != nil {
-			fmt.Println("Error decoding PNG:", err)
+			log.Println("Error decoding PNG:", err)
 			break
 		}
 
 		if img != nil {
 			//			fmt.Print("\033[H\033[2J")
-			out, err := v.converter.Convert(img)
+			out, err := v.converter.ConvertConcurrent(img)
 			if err != nil {
 				log.Println(err.Error())
 			}
@@ -95,10 +95,10 @@ func (v *VideoToAsciiProcessor) Process() {
 	}
 
 	if err := ffmpegCmd.Wait(); err != nil {
-		fmt.Println("Error waiting for FFmpeg command:", err)
+		log.Println("Error waiting for FFmpeg command:", err)
 		return
 	}
 
-	fmt.Println("Frames extracted and processed.")
+	log.Println("Frames extracted and processed.")
 
 }
