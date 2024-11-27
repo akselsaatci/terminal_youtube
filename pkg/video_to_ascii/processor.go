@@ -11,20 +11,22 @@ import (
 )
 
 type VideoToAsciiProcessor struct {
-	videoPath string
-	frameRate int
-	resuliton string
-	converter *image_to_ascii.AsciiConverter
-	stdIn     *io.ReadCloser
+	videoPath    string
+	frameRate    int
+	resuliton    string
+	converter    *image_to_ascii.AsciiConverter
+	stdIn        *io.ReadCloser
+	frameChannel chan<- string
 }
 
-func NewVideoToFrameProcessor(v, r string, fps int, conv *image_to_ascii.AsciiConverter, stdIn *io.ReadCloser) *VideoToAsciiProcessor {
+func NewVideoToFrameProcessor(v, r string, fps int, conv *image_to_ascii.AsciiConverter, stdIn *io.ReadCloser, fC chan<- string) *VideoToAsciiProcessor {
 	return &VideoToAsciiProcessor{
-		videoPath: v,
-		resuliton: r,
-		frameRate: fps,
-		converter: conv,
-		stdIn:     stdIn,
+		videoPath:    v,
+		frameRate:    fps,
+		resuliton:    r,
+		converter:    conv,
+		stdIn:        stdIn,
+		frameChannel: fC,
 	}
 }
 func (v *VideoToAsciiProcessor) Process() {
@@ -46,12 +48,12 @@ func (v *VideoToAsciiProcessor) Process() {
 	//	stdErr, err := ffmpegCmd.StderrPipe()
 
 	if err != nil {
-		log.Println("Error creating stdout pipe:", err)
+		log.Fatalln("Error creating stdout pipe:", err)
 		return
 	}
 
 	if err := ffmpegCmd.Start(); err != nil {
-		log.Println("Error starting FFmpeg command:", err)
+		log.Fatalln("Error starting FFmpeg command:", err)
 		return
 	}
 
@@ -88,14 +90,15 @@ func (v *VideoToAsciiProcessor) Process() {
 				log.Println(err.Error())
 			}
 
-			fmt.Print(out)
+			//////////////////		fmt.Print(out)
+			v.frameChannel <- out
 
 		}
 
 	}
 
 	if err := ffmpegCmd.Wait(); err != nil {
-		log.Println("Error waiting for FFmpeg command:", err)
+		log.Fatalln("Error waiting for FFmpeg command:", err)
 		return
 	}
 

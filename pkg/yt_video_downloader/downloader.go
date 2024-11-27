@@ -1,7 +1,9 @@
 package yt_video_downloader
 
 import (
+	"bufio"
 	"io"
+	"log"
 	"os/exec"
 )
 
@@ -32,20 +34,20 @@ func (y *YtDipVideoDownloader) DownloadToStdout(videoPath string) (io.ReadCloser
 		return nil, err
 	}
 
-	//	stderr, err := ytDlpCmd.StderrPipe()
-	//	if err != nil {
-	//		return nil, err
-	//	}
+	stderr, err := ytDlpCmd.StderrPipe()
+	if err != nil {
+		return nil, err
+	}
 
 	if err := ytDlpCmd.Start(); err != nil {
 		return nil, err
 	}
 
-	//	go func() {
-	//		scanner := bufio.NewScanner(stderr)
-	//		for scanner.Scan() {
-	//			log.Printf("yt-dlp Error %s", scanner.Text())
-	//		}
-	//	}()
+	go func() {
+		scanner := bufio.NewScanner(stderr)
+		for scanner.Scan() {
+			log.Printf("yt-dlp Error %s", scanner.Text())
+		}
+	}()
 	return stdout, nil
 }
