@@ -16,15 +16,17 @@ type TerminalRenderer struct {
 	timeBetweenFrames float64
 	framesChannel     <-chan string
 	doneChannel       chan<- bool
-	frameDoneChannel  chan<- bool
+	frameDoneChannel  <-chan bool
 }
 
-func NewTerminalRenderer(fps int, framesChannel <-chan string) *TerminalRenderer {
+func NewTerminalRenderer(fps int, framesChannel <-chan string, doneChannel chan<- bool, frameDoneChannel <-chan bool) *TerminalRenderer {
 	return &TerminalRenderer{
 		framePerSecond: fps,
 		framesChannel:  framesChannel,
 		// TODO maybe can convert it to ms
 		timeBetweenFrames: float64(1) / float64(fps),
+		frameDoneChannel:  frameDoneChannel,
+		doneChannel:       doneChannel,
 	}
 
 }
@@ -35,11 +37,22 @@ func (t *TerminalRenderer) Render() {
 	fpsStartTime := time.Now()
 	frameCount := 0
 
+	isDone := false
+	go func() {
+		isDone = <-t.frameDoneChannel
+	}()
+
 	//main for loop
 	for {
 		//clear code
 		fmt.Print("\033[H\033[2J")
 		currentFrame := <-t.framesChannel
+		if currentFrame == "%END%" && isDone {
+			t.doneChannel <- true
+			close(t.doneChannel)
+			return
+		}
+
 		fmt.Println(currentFrame)
 		frameCount++
 		fpsElapsed := time.Since(fpsStartTime).Seconds()

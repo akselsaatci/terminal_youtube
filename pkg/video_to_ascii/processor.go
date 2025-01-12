@@ -11,22 +11,24 @@ import (
 )
 
 type VideoToAsciiProcessor struct {
-	videoPath    string
-	frameRate    int
-	resuliton    string
-	converter    *image_to_ascii.AsciiConverter
-	stdIn        *io.ReadCloser
-	frameChannel chan<- string
+	videoPath        string
+	frameRate        int
+	resuliton        string
+	converter        *image_to_ascii.AsciiConverter
+	stdIn            *io.ReadCloser
+	frameChannel     chan<- string
+	frameDoneChannel chan<- bool
 }
 
-func NewVideoToFrameProcessor(v, r string, fps int, conv *image_to_ascii.AsciiConverter, stdIn *io.ReadCloser, fC chan<- string) *VideoToAsciiProcessor {
+func NewVideoToFrameProcessor(v, r string, fps int, conv *image_to_ascii.AsciiConverter, stdIn *io.ReadCloser, fC chan<- string, fDc chan<- bool) *VideoToAsciiProcessor {
 	return &VideoToAsciiProcessor{
-		videoPath:    v,
-		frameRate:    fps,
-		resuliton:    r,
-		converter:    conv,
-		stdIn:        stdIn,
-		frameChannel: fC,
+		videoPath:        v,
+		frameRate:        fps,
+		resuliton:        r,
+		converter:        conv,
+		stdIn:            stdIn,
+		frameChannel:     fC,
+		frameDoneChannel: fDc,
 	}
 }
 func (v *VideoToAsciiProcessor) Process() {
@@ -96,6 +98,10 @@ func (v *VideoToAsciiProcessor) Process() {
 		}
 
 	}
+	v.frameChannel <- "%END%"
+	v.frameDoneChannel <- true
+	close(v.frameChannel)
+	close(v.frameDoneChannel)
 
 	if err := ffmpegCmd.Wait(); err != nil {
 		log.Fatalln("Error waiting for FFmpeg command:", err)
@@ -103,5 +109,6 @@ func (v *VideoToAsciiProcessor) Process() {
 	}
 
 	log.Println("Frames extracted and processed.")
+	return
 
 }
